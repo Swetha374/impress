@@ -29,24 +29,39 @@ def generate_bot_responses(message, session):
 
 
 def record_current_answer(answer, current_question_id, session):
-    '''
-    Validates and stores the answer for the current question to django session.
-    '''
-    return True, ""
+   
+    current_question = next(q for q in PYTHON_QUESTION_LIST if q['id'] == current_question_id)
+    correct_answer = current_question['correct_answer']
+
+    if answer.lower() == correct_answer.lower():
+        # Store the correct answer in the session
+        session["answers"][current_question_id] = True
+        return True, ""
+    else:
+        # Store the incorrect answer in the session
+        session["answers"][current_question_id] = False
+        return False, f"Sorry, that's incorrect. The correct answer is: {correct_answer}"
 
 
 def get_next_question(current_question_id):
     '''
     Fetches the next question from the PYTHON_QUESTION_LIST based on the current_question_id.
     '''
+    next_question_id = current_question_id + 1
 
-    return "dummy question", -1
-
+    if next_question_id <= len(PYTHON_QUESTION_LIST):
+        next_question = PYTHON_QUESTION_LIST[next_question_id - 1]['question']
+        return next_question, next_question_id
+    else:
+        return None, -1  # No more questions
 
 def generate_final_response(session):
     '''
     Creates a final result message including a score based on the answers
     by the user for questions in the PYTHON_QUESTION_LIST.
     '''
+    total_questions = len(PYTHON_QUESTION_LIST)
+    correct_answers = sum(session["answers"].values())
+    score = (correct_answers / total_questions) * 100
 
-    return "dummy result"
+    return f"You answered {correct_answers} out of {total_questions} questions correctly. Your score is {score}%."
